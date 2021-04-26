@@ -46,6 +46,7 @@ func Start() {
 
 
 	gin.POST("/issue", ih.CreateIssue)
+	//m
 	gin.POST("/issuemongo", ih.CreateIssueMongo)
 
 	gin.POST("/issue/create_many", ih.CreateIssues)
