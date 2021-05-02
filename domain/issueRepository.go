@@ -6,8 +6,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"strconv"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -18,43 +20,44 @@ type IssueRepositorySql struct {
 
 func (d IssueRepositorySql) FindAll() (*[]Issue, *errs.AppError) {
 	//var rows *sql.Rows
-	var err error
 	issues := make([]Issue, 0)
 
-	findAllSql := "select * from issues"
-	err = d.client.Select(&issues, findAllSql)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	collection := d.clientMongo.Database("localhost").Collection("issues")
+
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{"_id", -1}})
+
+	cur, err := collection.Find(context.TODO(), bson.D{{}}, findOptions)
+
+	defer cur.Close(ctx)
 
 	if err != nil {
 		logger.Error("Error while quering issues from database " + err.Error())
 		return nil, errs.NewUnexpectedError("Unexpected database error")
 	}
 
-	//err = sqlx.StructScan(rows, &customers)
+	for cur.Next(context.TODO()) {
+		t := Issue{}
+		err := cur.Decode(&t)
+		if err != nil {
+			return nil, errs.NewUnexpectedError("Unexpected database error")
+		}
+		issues = append(issues, t)
+	}
 
 	return &issues, nil
 }
 
+
 func (d IssueRepositorySql) Save(i Issue) (*Issue, *errs.AppError) {
-	sqlInsert := "INSERT INTO issues (name, description, createdAt, status, account_id) values (?,?,?,?,?)"
-
-	result, err := d.client.Exec(sqlInsert, i.Name, i.Description, i.CreatedAt, i.Status, i.AccountId)
-
-	if err != nil {
-		logger.Error("Error while creating issue: " + err.Error())
-		return nil, errs.NewUnexpectedError("Unexpected error from database")
-	}
-
-	id, err := result.LastInsertId()
-
-	i.IssueId = strconv.FormatInt(id, 10)
-	return &i, nil
-}
-
-func (d IssueRepositorySql) SaveMongo(i Issue) (*IssueMongo, *errs.AppError) {
 	collection := d.clientMongo.Database("localhost").Collection("issues")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
-	issue := IssueMongo{
+	issue := Issue{
 		Name:        i.Name,
 		Description: i.Description,
 		CreatedAt:   i.CreatedAt,
@@ -62,12 +65,20 @@ func (d IssueRepositorySql) SaveMongo(i Issue) (*IssueMongo, *errs.AppError) {
 		AccountId:   i.AccountId,
 	}
 
-	_, err := collection.InsertOne(ctx, issue)
+	inserted, err := collection.InsertOne(ctx, issue)
 
 	if err != nil {
 		logger.Error("Error while creating issue: " + err.Error())
 		return nil, errs.NewUnexpectedError("Unexpected error from database")
 	}
+
+	// type assertion to ObjectId primitive
+	if oid, ok := inserted.InsertedID.(primitive.ObjectID); ok {
+		issue.ID = oid
+	} else {
+		return nil, errs.NewUnexpectedError("Error while converting InsertedId")
+	}
+
 
 	if err != nil {
 		return nil, errs.NewUnexpectedError("Unexpected error from database")

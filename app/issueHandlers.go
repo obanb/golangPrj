@@ -44,7 +44,7 @@ func (h *IssueHandlers) CreateIssueMongo(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 	} else {
-		issue, appError := h.service.CreateIssueMongo(request)
+		issue, appError := h.service.CreateIssue(request)
 		if appError != nil {
 			c.JSON(appError.Code, appError.AsMessage())
 		} else {
