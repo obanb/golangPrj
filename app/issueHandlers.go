@@ -12,6 +12,12 @@ type IssueHandlers struct {
 	service service.IssueService
 }
 
+// issues godoc
+// @Summary Retrieves list of Issues
+// @Produce json
+// @Success 200 {object} []domain.Issue
+// @Failure 500 {object} errs.AppError
+// @Router /issues [get]
 func (h *IssueHandlers) getAllIssues(c *gin.Context) {
 	customers, err := h.service.GetAllIssues()
 

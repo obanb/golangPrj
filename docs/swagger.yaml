@@ -1,0 +1,49 @@
+definitions:
+  domain.Issue:
+    properties:
+      accountId:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      status:
+        type: number
+    type: object
+  errs.AppError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+info:
+  contact:
+    email: ratpile@gmail.com
+    name: API Support
+  description: Swagger API for Golang Testigo project
+  termsOfService: http://swagger.io/terms/
+  title: Testigo Swagger API
+  version: "1.0"
+paths:
+  /issues:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Issue'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errs.AppError'
+      summary: Retrieves list of Issues
+swagger: "2.0"

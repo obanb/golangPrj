@@ -19,7 +19,6 @@ type IssueRepositorySql struct {
 }
 
 func (d IssueRepositorySql) FindAll() (*[]Issue, *errs.AppError) {
-	//var rows *sql.Rows
 	issues := make([]Issue, 0)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
