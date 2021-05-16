@@ -59,7 +59,6 @@ func (h *IssueHandlers) CreateIssueMongo(c *gin.Context) {
 	}
 }
 
-
 func (h *IssueHandlers) CreateIssues(c *gin.Context) {
 	var request dto.CreateIssuesRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&request)

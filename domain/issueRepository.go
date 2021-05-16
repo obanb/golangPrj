@@ -5,7 +5,6 @@ import (
 	"awesomeProject/logger"
 	"context"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +13,6 @@ import (
 )
 
 type IssueRepositorySql struct {
-	client *sqlx.DB
 	clientMongo *mongo.Client
 }
 
@@ -51,7 +49,6 @@ func (d IssueRepositorySql) FindAll() (*[]Issue, *errs.AppError) {
 	return &issues, nil
 }
 
-
 func (d IssueRepositorySql) Save(i Issue) (*Issue, *errs.AppError) {
 	collection := d.clientMongo.Database("localhost").Collection("issues")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
@@ -77,7 +74,6 @@ func (d IssueRepositorySql) Save(i Issue) (*Issue, *errs.AppError) {
 	} else {
 		return nil, errs.NewUnexpectedError("Error while converting InsertedId")
 	}
-
 
 	if err != nil {
 		return nil, errs.NewUnexpectedError("Unexpected error from database")
@@ -109,6 +105,6 @@ func (d IssueRepositorySql) SaveMany(i []Issue) (*[]Issue, *errs.AppError) {
 	return &results, nil
 }
 
-func NewIssueRepositorySql(dbClient *sqlx.DB, clientMongo *mongo.Client) IssueRepositorySql {
-	return IssueRepositorySql{dbClient,clientMongo }
+func NewIssueRepositorySql(clientMongo *mongo.Client) IssueRepositorySql {
+	return IssueRepositorySql{clientMongo}
 }

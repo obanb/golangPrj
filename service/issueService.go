@@ -56,11 +56,11 @@ func (s DefaultIssueService) CreateIssues(req dto.CreateIssuesRequest) (*[]dto.M
 			if err != nil {
 				c <- dto.MayFailWithIdResponse{
 					Success: false,
-					Error: err,
+					Error:   err,
 				}
 			} else {
 				id := i.ID.String()
-				c <-  dto.MayFailWithIdResponse{
+				c <- dto.MayFailWithIdResponse{
 					Success: true,
 					Id:      &id,
 				}

@@ -6,32 +6,52 @@ import (
 	"awesomeProject/logger"
 	"context"
 	"encoding/json"
-	"github.com/jmoiron/sqlx"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"strconv"
 	"time"
 )
 
 type DbReportRepositoryCrossDb struct {
-	clientSql   *sqlx.DB
 	clientMongo *mongo.Client
 }
 
-func (d DbReportRepositoryCrossDb) Save(dbr DbReport) (*DbReport, *errs.AppError) {
-	sqlInsert := "INSERT INTO dbReports (name, description, created_At, status, account_id, issue_id, report_query, report_source, result_data) values (?,?,?,?,?,?,?,?,?)"
+func (d DbReportRepositoryCrossDb) Save(dbr *DbReport) (*DbReport, *errs.AppError) {
+	collection := d.clientMongo.Database("localhost").Collection("dbReports")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
-	result, err := d.clientSql.Exec(sqlInsert, dbr.Name, dbr.Description, dbr.CreatedAt, dbr.Status, dbr.AccountId, dbr.IssueId, dbr.ReportQuery, dbr.ReportSource, dbr.ResultData)
+	dbReport := DbReport{
+		ID:           primitive.ObjectID{},
+		Name:         dbr.Name,
+		Description:  dbr.Description,
+		CreatedAt:    dbr.CreatedAt,
+		Status:       0,
+		AccountId:    dbr.AccountId,
+		ReportQuery:  dbr.ReportQuery,
+		ReportSource: dbr.ReportSource,
+		ResultData: dbr.ResultData,
+	}
+
+	inserted, err := collection.InsertOne(ctx, dbReport)
 
 	if err != nil {
-		logger.Error("Error while creating DbReport: " + err.Error())
+		logger.Error("Error while creating dbReport: " + err.Error())
 		return nil, errs.NewUnexpectedError("Unexpected error from database")
 	}
 
-	id, err := result.LastInsertId()
+	// type assertion to ObjectId primitive
+	if oid, ok := inserted.InsertedID.(primitive.ObjectID); ok {
+		dbReport.ID = oid
+	} else {
+		return nil, errs.NewUnexpectedError("Error while converting InsertedId")
+	}
 
-	dbr.ReportId = strconv.FormatInt(id, 10)
-	return &dbr, nil
+	if err != nil {
+		return nil, errs.NewUnexpectedError("Unexpected error from database")
+	}
+
+	return &dbReport, nil
 }
 
 func (d DbReportRepositoryCrossDb) ExecMongoQuery(query *dto.CreateDbReportRequest) (*[]map[string]interface{}, *string, *errs.AppError) {
@@ -40,45 +60,30 @@ func (d DbReportRepositoryCrossDb) ExecMongoQuery(query *dto.CreateDbReportReque
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resultDataRaw := make([]map[string]interface{}, 0)
-	item := map[string]interface{}{}
-	var tempBsonDocument bson.D
+	var resultDataRaw []map[string]interface{}
 	var tempBsonQuery bson.D
-	var tempBytes []byte
 
 	var marshalError error
 
-	marshalError = bson.UnmarshalExtJSON([]byte(query.Query), true, &tempBsonQuery)
-	if marshalError != nil {
+	err := bson.UnmarshalExtJSON([]byte(query.Query), true, &tempBsonQuery)
+	if err != nil {
 		return nil, nil, errs.NewUnexpectedError("ExecMongoQuery execution error: " + marshalError.Error())
 	}
 
 	cursor, findError := collection.Find(ctx, tempBsonQuery)
+	fmt.Print("query ", tempBsonQuery)
 	if findError != nil {
 		return nil, nil, errs.NewUnexpectedError("ExecMongoQuery execution error: " + findError.Error())
 	}
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		// set to bsonDocument temporary
-		decodeError := cursor.Decode(&tempBsonDocument)
-		if decodeError != nil {
-			return nil, nil, errs.NewUnexpectedError("cursor decode error: " + findError.Error())
+		t := map[string]interface{}{}
+		err := cursor.Decode(&t)
+		if err != nil {
+			return nil, nil, errs.NewUnexpectedError("Unexpected database error")
 		}
-
-		tempBytes, marshalError = bson.Marshal(tempBsonDocument)
-		if marshalError != nil {
-			return nil, nil, errs.NewUnexpectedError("marshal error: " + marshalError.Error())
-		}
-
-		// unmarshal temporary bytes to map
-		marshalError = bson.Unmarshal(tempBytes, item)
-		if marshalError != nil {
-			return nil, nil, errs.NewUnexpectedError("unmarshal error: " + marshalError.Error())
-		}
-
-		// append item to unknown interface
-		resultDataRaw = append(resultDataRaw, item)
+		resultDataRaw = append(resultDataRaw, t)
 	}
 
 	stringResult, stringifyError := stringifiesRawData(resultDataRaw)
@@ -88,10 +93,6 @@ func (d DbReportRepositoryCrossDb) ExecMongoQuery(query *dto.CreateDbReportReque
 	}
 
 	return &resultDataRaw, stringResult, nil
-}
-
-func NewDbReportRepository(clientSql *sqlx.DB, clientMongo *mongo.Client) DbReportRepository {
-	return DbReportRepositoryCrossDb{clientSql, clientMongo}
 }
 
 func stringifiesRawData(rawData []map[string]interface{}) (*string, *errs.AppError) {
@@ -106,3 +107,9 @@ func stringifiesRawData(rawData []map[string]interface{}) (*string, *errs.AppErr
 
 	return &stringifies, nil
 }
+
+
+func NewDbReportRepository(clientMongo *mongo.Client) DbReportRepository {
+	return DbReportRepositoryCrossDb{clientMongo}
+}
+

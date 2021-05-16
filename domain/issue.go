@@ -6,12 +6,12 @@ import (
 )
 
 type Issue struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty"`
-	Name        string  `bson:"name,omitempty"`
-	Description string  `bson:"description,omitempty"`
-	CreatedAt   string 	`bson:"createdAt,omitempty"`
-	Status      float64 `bson:"status,omitempty"`
-	AccountId   string  `bson:"accountId,omitempty"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty`
+	Name        string             `bson:"name,omitempty" json:"name,omitempty"`
+	Description string             `bson:"description,omitempty" json:"description,omitempty"`
+	CreatedAt   string             `bson:"createdAt,omitempty" json:"createdAt,omitempty"`
+	Status      float64            `bson:"status,omitempty" json:"status,omitempty"`
+	AccountId   string             `bson:"accountId,omitempty" json:"accountId,omitempty"`
 }
 
 type IssueRepository interface {

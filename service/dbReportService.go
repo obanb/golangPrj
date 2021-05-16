@@ -4,20 +4,20 @@ import (
 	"awesomeProject/domain"
 	"awesomeProject/dto"
 	errs "awesomeProject/errors"
+	"fmt"
 	"time"
 )
 
 type DbReportService interface {
-	CreateDbReport(request *dto.CreateDbReportRequest) (*dto.CreateDbReportResponse, *errs.AppError)
+	CreateDbReport(request *dto.CreateDbReportRequest) (*domain.DbReport, *errs.AppError)
 }
 
 type DefaultDbReportService struct {
 	repo domain.DbReportRepository
 }
 
-func (s DefaultDbReportService) CreateDbReport(req *dto.CreateDbReportRequest) (*dto.CreateDbReportResponse, *errs.AppError) {
-	DbReport := domain.DbReport{
-		ReportId:     "1",
+func (s DefaultDbReportService) CreateDbReport(req *dto.CreateDbReportRequest) (*domain.DbReport, *errs.AppError) {
+	DbReport := &domain.DbReport{
 		Name:         req.Name,
 		Description:  req.Description,
 		CreatedAt:    time.Now().Format("2006-01-02 15:04:05"),
@@ -25,7 +25,6 @@ func (s DefaultDbReportService) CreateDbReport(req *dto.CreateDbReportRequest) (
 		Status:       1,
 		ReportQuery:  req.Query,
 		ReportSource: req.Source,
-		IssueId:      "2006",
 	}
 
 	_, stringResult, err := s.repo.ExecMongoQuery(req)
@@ -34,16 +33,16 @@ func (s DefaultDbReportService) CreateDbReport(req *dto.CreateDbReportRequest) (
 		return nil, errs.NewUnexpectedError("CreateDbReport ExecMongoQuery error " + err.Message)
 	}
 
-	DbReport.ResultData = stringResult
+	DbReport.ResultData = *stringResult
 
 	newDbReport, err := s.repo.Save(DbReport)
 	if err != nil {
 		return nil, err
 	}
 
-	response := newDbReport.ToCreateDbReportResponseDto()
+	fmt.Print(newDbReport)
 
-	return &response, nil
+	return newDbReport, nil
 }
 
 func NewDbReportService(repository domain.DbReportRepository) DefaultDbReportService {

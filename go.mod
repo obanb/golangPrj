@@ -3,6 +3,7 @@ module awesomeProject
 go 1.16
 
 require (
+	github.com/360EntSecGroup-Skylar/excelize/v2 v2.4.0 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/gin-gonic/gin v1.7.1
 	github.com/go-openapi/spec v0.20.3 // indirect

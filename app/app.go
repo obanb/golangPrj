@@ -21,20 +21,20 @@ func Start() {
 
 	gin.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 
-	mySqlClient := getMySqlClient("root:root@tcp(localhost:3306)/banking")
+	//mySqlClient := getMySqlClient("root:root@tcp(localhost:3306)/banking")
 	mongoClient := getMongoClient("mongodb://localhost:27017")
 
 	// local db/service repositories
 	//customerRepositoryDb := domain.NewCustomerRepositoryDb(mySqlClient)
 	//accountRepositoryDb := domain.NewAccountRepositoryDb(mySqlClient)
-	issueRepositorySql := domain.NewIssueRepositorySql(mySqlClient, mongoClient)
-	dbReportRepository := domain.NewDbReportRepository(mySqlClient, mongoClient)
+	issueRepository := domain.NewIssueRepositorySql(mongoClient)
+	dbReportRepository := domain.NewDbReportRepository(mongoClient)
 	// remote db repositories
 
 	// rest handlers
 	//ch := CustomerHandlers{service: service.NewCustomerService(customerRepositoryDb)}
 	//ah := AccountHandlers{service: service.NewAccountService(accountRepositoryDb)}
-	ih := IssueHandlers{service: service.NewIssueService(issueRepositorySql)}
+	ih := IssueHandlers{service: service.NewIssueService(issueRepository)}
 	dbh := DbReportHandlers{service: service.NewDbReportService(dbReportRepository)}
 	//ch := CustomerHandlers{service: service.NewCustomerService(domain.NewCustomerRepositoryStub())}
 
@@ -47,9 +47,7 @@ func Start() {
 	//	Methods(http.MethodPost).
 	//	Name("NewTransaction")
 
-
 	gin.GET("/issues", ih.getAllIssues)
-
 
 	gin.POST("/issue", ih.CreateIssue)
 	//m
