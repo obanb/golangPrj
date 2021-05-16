@@ -24,5 +24,6 @@ func Generate() *excelize.File{
 	if err := f.SaveAs("Book1.xlsx"); err != nil {
 		fmt.Println(err)
 	}
+	fmt.Print("x")
 	return f
 }
