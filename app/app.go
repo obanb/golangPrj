@@ -36,6 +36,7 @@ func Start() {
 	//ah := AccountHandlers{service: service.NewAccountService(accountRepositoryDb)}
 	ih := IssueHandlers{service: service.NewIssueService(issueRepository)}
 	dbh := DbReportHandlers{service: service.NewDbReportService(dbReportRepository)}
+	dh := DownloadHandler{xlsxService: service.NewDbXlsxService()}
 	//ch := CustomerHandlers{service: service.NewCustomerService(domain.NewCustomerRepositoryStub())}
 
 	//// rest routes
@@ -48,6 +49,8 @@ func Start() {
 	//	Name("NewTransaction")
 
 	gin.GET("/issues", ih.getAllIssues)
+
+	gin.GET("/download", dh.downloadXlsx)
 
 	gin.POST("/issue", ih.CreateIssue)
 	//m

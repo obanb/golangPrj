@@ -1,29 +1,42 @@
 package service
 
 import (
-	"awesomeProject/domain"
 	errs "awesomeProject/errors"
-	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
+	"time"
 )
 
 type XlsxService interface {
-	Generate() (*[]domain.Issue, *errs.AppError)
+	Generate() (*excelize.File, *string, *errs.AppError)
 }
 
-func Generate() *excelize.File{
+type DefaultXlsxService struct {
+}
+
+func (s DefaultXlsxService) Generate() (*excelize.File, *string, *errs.AppError) {
 	f := excelize.NewFile()
-	// Create a new sheet.
-	index := f.NewSheet("Sheet2")
-	// Set value of a cell.
-	f.SetCellValue("Sheet2", "A2", "Hello world.")
-	f.SetCellValue("Sheet1", "B2", 100)
-	// Set active sheet of the workbook.
-	f.SetActiveSheet(index)
-	// Save spreadsheet by the given path.
-	if err := f.SaveAs("Book1.xlsx"); err != nil {
-		fmt.Println(err)
+	indexName := "report"
+
+	index := f.NewSheet(indexName)
+
+	x := [5]string{"pes","kocka","vlocka","prase","zase"}
+
+	for  i,value :=  range x {
+		cell, err := excelize.CoordinatesToCellName(i + 1,1)
+		if err != nil{
+			appError := errs.NewUnexpectedError(err.Error())
+			return nil, nil, appError
+		}
+		f.SetCellValue(indexName, cell, value)
 	}
-	fmt.Print("x")
-	return f
+
+	f.SetActiveSheet(index)
+
+	filename := time.Now().UTC().Format("report-20060102150405.xlsx")
+
+	return f, &filename, nil
+}
+
+func NewDbXlsxService() DefaultXlsxService {
+	return DefaultXlsxService{}
 }

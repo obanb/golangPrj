@@ -30,7 +30,7 @@ func (d DbReportRepositoryCrossDb) Save(dbr *DbReport) (*DbReport, *errs.AppErro
 		AccountId:    dbr.AccountId,
 		ReportQuery:  dbr.ReportQuery,
 		ReportSource: dbr.ReportSource,
-		ResultData: dbr.ResultData,
+		ResultData:   dbr.ResultData,
 	}
 
 	inserted, err := collection.InsertOne(ctx, dbReport)
@@ -108,8 +108,6 @@ func stringifiesRawData(rawData []map[string]interface{}) (*string, *errs.AppErr
 	return &stringifies, nil
 }
 
-
 func NewDbReportRepository(clientMongo *mongo.Client) DbReportRepository {
 	return DbReportRepositoryCrossDb{clientMongo}
 }
-
