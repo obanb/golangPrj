@@ -10,6 +10,7 @@ import (
 
 type DownloadHandler struct {
 	xlsxService service.XlsxService
+	fileService service.FileService
 }
 
 func (d *DownloadHandler) downloadXlsx(c *gin.Context) {
@@ -25,6 +26,8 @@ func (d *DownloadHandler) downloadXlsx(c *gin.Context) {
 		c.JSON(appError.Code, appError.AsMessage())
 		return
 	}
+
+	d.fileService.Save(b.Bytes())
 
 	c.Header("Content-Description", "File Transfer")
 	c.Header("Content-Disposition", "attachment; filename=" + *filename)

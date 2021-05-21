@@ -36,7 +36,7 @@ func Start() {
 	//ah := AccountHandlers{service: service.NewAccountService(accountRepositoryDb)}
 	ih := IssueHandlers{service: service.NewIssueService(issueRepository)}
 	dbh := DbReportHandlers{service: service.NewDbReportService(dbReportRepository)}
-	dh := DownloadHandler{xlsxService: service.NewDbXlsxService()}
+	dh := DownloadHandler{xlsxService: service.NewDbXlsxService(), fileService: service.NewFileService(mongoClient)}
 	//ch := CustomerHandlers{service: service.NewCustomerService(domain.NewCustomerRepositoryStub())}
 
 	//// rest routes
