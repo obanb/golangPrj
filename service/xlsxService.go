@@ -19,11 +19,11 @@ func (s DefaultXlsxService) Generate() (*excelize.File, *string, *errs.AppError)
 
 	index := f.NewSheet(indexName)
 
-	x := [5]string{"pes","kocka","vlocka","prase","zase"}
+	x := [5]string{"pes", "kocka", "vlocka", "prase", "zase"}
 
-	for  i,value :=  range x {
-		cell, err := excelize.CoordinatesToCellName(i + 1,1)
-		if err != nil{
+	for i, value := range x {
+		cell, err := excelize.CoordinatesToCellName(i+1, 1)
+		if err != nil {
 			appError := errs.NewUnexpectedError(err.Error())
 			return nil, nil, appError
 		}

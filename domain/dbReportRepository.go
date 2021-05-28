@@ -47,10 +47,6 @@ func (d DbReportRepositoryCrossDb) Save(dbr *DbReport) (*DbReport, *errs.AppErro
 		return nil, errs.NewUnexpectedError("Error while converting InsertedId")
 	}
 
-	if err != nil {
-		return nil, errs.NewUnexpectedError("Unexpected error from database")
-	}
-
 	return &dbReport, nil
 }
 
@@ -61,20 +57,18 @@ func (d DbReportRepositoryCrossDb) ExecMongoQuery(query *dto.CreateDbReportReque
 	defer cancel()
 
 	var resultDataRaw []map[string]interface{}
-	var tempBsonQuery bson.D
 
-	var marshalError error
-
-	err := bson.UnmarshalExtJSON([]byte(query.Query), true, &tempBsonQuery)
+	bsonQuery, err := prepareBsonQuery(query)
 	if err != nil {
-		return nil, nil, errs.NewUnexpectedError("ExecMongoQuery execution error: " + marshalError.Error())
+		return nil, nil, errs.NewUnexpectedError("ExecMongoQuery execution error: " + err.Message)
 	}
 
-	cursor, findError := collection.Find(ctx, tempBsonQuery)
-	fmt.Print("query ", tempBsonQuery)
+	cursor, findError := collection.Find(ctx, bsonQuery)
+	fmt.Print("query ", bsonQuery)
 	if findError != nil {
 		return nil, nil, errs.NewUnexpectedError("ExecMongoQuery execution error: " + findError.Error())
 	}
+
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
@@ -106,6 +100,17 @@ func stringifiesRawData(rawData []map[string]interface{}) (*string, *errs.AppErr
 	stringifies := string(b)
 
 	return &stringifies, nil
+}
+
+func prepareBsonQuery(req *dto.CreateDbReportRequest) (*bson.D, *errs.AppError) {
+	var tempBsonQuery bson.D
+
+	err := bson.UnmarshalExtJSON([]byte(req.Query), true, &tempBsonQuery)
+	if err != nil {
+		return nil, errs.NewUnexpectedError("prepareBsonQuery error: " + err.Error())
+	}
+
+	return &tempBsonQuery, nil
 }
 
 func NewDbReportRepository(clientMongo *mongo.Client) DbReportRepository {

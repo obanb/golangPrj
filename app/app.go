@@ -51,6 +51,7 @@ func Start() {
 	gin.GET("/issues", ih.getAllIssues)
 
 	gin.GET("/download", dh.downloadXlsx)
+	gin.GET("/downloadById", dh.downloadById)
 
 	gin.POST("/issue", ih.CreateIssue)
 	//m
