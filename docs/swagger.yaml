@@ -14,6 +14,15 @@ definitions:
       status:
         type: number
     type: object
+  dto.CreateIssueRequest:
+    properties:
+      account_id:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
   errs.AppError:
     properties:
       code:
@@ -30,6 +39,29 @@ info:
   title: Testigo Swagger API
   version: "1.0"
 paths:
+  /issue:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateIssueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Issue'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errs.AppError'
+      summary: Create issue
   /issues:
     get:
       produces:

@@ -12,7 +12,7 @@ type IssueHandlers struct {
 	service service.IssueService
 }
 
-// issues godoc
+// getAllIssues godoc
 // @Summary Retrieves list of Issues
 // @Produce json
 // @Success 200 {object} []domain.Issue
@@ -29,6 +29,15 @@ func (h *IssueHandlers) getAllIssues(c *gin.Context) {
 	}
 }
 
+
+// CreateIssue godoc
+// @Summary Create issue
+// @Produce json
+// @Accept  json
+// @Param   body body dto.CreateIssueRequest true  "body"
+// @Success 200 {object} domain.Issue
+// @Failure 500 {object} errs.AppError
+// @Router /issue [post]
 func (h *IssueHandlers) CreateIssue(c *gin.Context) {
 	var request dto.CreateIssueRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&request)
