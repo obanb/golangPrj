@@ -51,9 +51,10 @@ func (d DbReportRepositoryCrossDb) Save(dbr *DbReport) (*DbReport, *errs.AppErro
 }
 
 func (d DbReportRepositoryCrossDb) ExecMongoQuery(query *dto.CreateDbReportRequest) (*[]map[string]interface{}, *string, *errs.AppError) {
-	collection := d.clientMongo.Database("localhost").Collection(query.Source)
+	collection := d.clientMongo.Database("egd-demo").Collection(query.Source)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// release resources after finish
 	defer cancel()
 
 	var resultDataRaw []map[string]interface{}
@@ -73,6 +74,7 @@ func (d DbReportRepositoryCrossDb) ExecMongoQuery(query *dto.CreateDbReportReque
 
 	for cursor.Next(ctx) {
 		t := map[string]interface{}{}
+		// decode = bson unmarshall
 		err := cursor.Decode(&t)
 		if err != nil {
 			return nil, nil, errs.NewUnexpectedError("Unexpected database error")
@@ -88,6 +90,38 @@ func (d DbReportRepositoryCrossDb) ExecMongoQuery(query *dto.CreateDbReportReque
 
 	return &resultDataRaw, stringResult, nil
 }
+
+func (d DbReportRepositoryCrossDb) ExecMongoAggregate(query *dto.CreateDbReportRequest) (*[]bson.D, *errs.AppError) {
+	collection := d.clientMongo.Database("egd-demo").Collection(query.Source)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// release resources after finish
+	defer cancel()
+
+	pipeline, _ := preparePipeline(query)
+
+	showLoadedCursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		panic(err)
+	}
+	var showsLoaded []bson.D
+	if err = showLoadedCursor.All(ctx, &showsLoaded); err != nil {
+		return nil, errs.NewUnexpectedError("Unexpected database error")
+	}
+	return &showsLoaded, nil
+}
+
+//func bsonToJson (b bson.D) bson.D {
+//
+//}
+//
+//func cursorToJson  (b bson.D ){
+//
+//}
+//
+//func execMongoFind  (b bson.D ){
+//
+//}
 
 func stringifiesRawData(rawData []map[string]interface{}) (*string, *errs.AppError) {
 
@@ -111,6 +145,23 @@ func prepareBsonQuery(req *dto.CreateDbReportRequest) (*bson.D, *errs.AppError) 
 	}
 
 	return &tempBsonQuery, nil
+}
+
+func preparePipeline(req *dto.CreateDbReportRequest) (*mongo.Pipeline, *errs.AppError) {
+	matchStage := bson.D{}
+	lookupStage := applyLookups(req)
+	groupStage := bson.D{{"$group", bson.D{{"_id", "$_id"}}}}
+	projectStage := bson.D{{"$project", bson.D{{"_id", "1"}}}}
+
+	return &mongo.Pipeline{matchStage, lookupStage, projectStage, groupStage}, nil
+}
+
+func applyLookups(req *dto.CreateDbReportRequest) bson.D {
+	var lookups bson.D
+	for _, l := range req.Lookup {
+		lookups = append(lookups, bson.E{Key: "$lookup", Value: bson.D{{"from", "_counters"}, {"localField", l.LocalKey}, {"foreignField", l.ForeignKey}, {"as", "podcast"}}})
+	}
+	return lookups
 }
 
 func NewDbReportRepository(clientMongo *mongo.Client) DbReportRepository {

@@ -47,7 +47,6 @@ func (d *DownloadHandler) downloadXlsx(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", b.Bytes())
 }
 
-
 func (d *DownloadHandler) downloadById(c *gin.Context) {
 
 	buffer, appError := d.fileService.DownloadById("fefefef")

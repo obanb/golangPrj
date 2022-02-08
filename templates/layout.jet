@@ -1,0 +1,11 @@
+{{block layout()}}
+<div class="container"></div>
+    <br>PRASE</br>
+    <script>
+        const pes = () => {
+            console.log("pes pes")
+        }
+    </script>
+</body>
+</html>
+{{end}}

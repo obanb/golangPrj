@@ -6,17 +6,17 @@ import (
 )
 
 type FileMetadata struct {
-	FsId string
+	FsId     string
 	Filename string
-	Date string
-	Len *string
+	Date     string
+	Len      *string
 }
 
 func (fm FileMetadata) ToBson() (*bson.D, *errs.AppError) {
 	var tempBson bson.D
 	data, err := bson.Marshal(fm)
 
-	if err!= nil {
+	if err != nil {
 		return nil, errs.NewUnexpectedError(err.Error())
 	}
 

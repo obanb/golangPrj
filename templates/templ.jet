@@ -1,0 +1,11 @@
+{{block prase()}}
+    <div class="container"></div>
+    <br>PRASE</br>
+    <script>
+        const les = () => {
+            console.log("prase")
+        }
+    </script>
+    </body>
+    </html>
+{{end}}

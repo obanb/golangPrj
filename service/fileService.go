@@ -23,13 +23,13 @@ type DefaultFileService struct {
 	clientMongo *mongo.Client
 }
 
-func (s DefaultFileService) DownloadById(id string)(*bytes.Buffer, *errs.AppError) {
+func (s DefaultFileService) DownloadById(id string) (*bytes.Buffer, *errs.AppError) {
 	database := s.clientMongo.Database("localhost")
 	fsFiles := database.Collection("fs.files")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	var results bson.M
 
-	err := fsFiles.FindOne(ctx, bson.M{"metadata.fsid":id}).Decode(&results)
+	err := fsFiles.FindOne(ctx, bson.M{"metadata.fsid": id}).Decode(&results)
 
 	fmt.Print(results)
 
@@ -37,7 +37,6 @@ func (s DefaultFileService) DownloadById(id string)(*bytes.Buffer, *errs.AppErro
 		appError := errs.NewUnexpectedError(err.Error())
 		return nil, appError
 	}
-
 
 	bucket, _ := gridfs.NewBucket(
 		database,

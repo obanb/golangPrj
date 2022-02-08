@@ -29,7 +29,6 @@ func (h *IssueHandlers) getAllIssues(c *gin.Context) {
 	}
 }
 
-
 // CreateIssue godoc
 // @Summary Create issue
 // @Produce json

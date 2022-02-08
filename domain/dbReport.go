@@ -20,5 +20,6 @@ type DbReport struct {
 
 type DbReportRepository interface {
 	Save(*DbReport) (*DbReport, *errs.AppError)
+
 	ExecMongoQuery(query *dto.CreateDbReportRequest) (*[]map[string]interface{}, *string, *errs.AppError)
 }
