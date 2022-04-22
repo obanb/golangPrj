@@ -116,8 +116,6 @@ func GenerateValueFromReflection(k reflect.Kind, t map[string]interface{}, key s
 	}
 }
 
-
-
 func GenerateReflectionData(t map[string]interface{}, l int) []map[string]interface{} {
 	data := make([]map[string]interface{}, l)
 	for i := 0; i < l; i++ {

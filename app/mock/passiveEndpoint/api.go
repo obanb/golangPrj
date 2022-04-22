@@ -16,7 +16,6 @@ func RegisterEndpointHandler() func(*gin.Context) {
 
 		err := decoder.Decode(&request)
 
-
 		Register(&request)
 
 		if err != nil {

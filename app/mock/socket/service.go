@@ -17,25 +17,33 @@ type Room struct {
 }
 
 type WsConnectionsHandler struct {
-	Rooms map[string]*Room
+	BroadcastRooms map[string]*Room
+	MeteringRooms  map[string]*Room
 }
 
 var WsConnections = WsConnectionsHandler{
 	make(map[string]*Room),
+	make(map[string]*Room),
 }
 
-func (wch *WsConnectionsHandler)DeleteRoom(key string) {
-	delete(wch.Rooms, key)
+func (wch *WsConnectionsHandler) DeleteRoom(roomType string, key string) {
+	if roomType == "Broadcast" {
+		delete(wch.BroadcastRooms, key)
+	} else {
+		delete(wch.MeteringRooms, key)
+	}
 }
 
-
-func (wch *WsConnectionsHandler)BroadcastAll(msg string) {
-	for _, room := range wch.Rooms {
+func (wch *WsConnectionsHandler) BroadcastAll(msg string) {
+	for _, room := range wch.BroadcastRooms {
+		room.Broadcast(msg)
+	}
+	for _, room := range wch.MeteringRooms {
 		room.Broadcast(msg)
 	}
 }
 
-func (wc *WebSocketConnection)Broadcast(msg interface{}) {
+func (wc *WebSocketConnection) Broadcast(msg interface{}) {
 	err := wc.WriteJSON(msg)
 	if err != nil {
 		log.Println("Web socket broadcast error.")
@@ -43,14 +51,13 @@ func (wc *WebSocketConnection)Broadcast(msg interface{}) {
 	}
 }
 
-
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func (wch *WsConnectionsHandler)WsEndpoint(c *gin.Context) {
+func (wch *WsConnectionsHandler) WsEndpoint(c *gin.Context) {
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println(err)
@@ -60,29 +67,42 @@ func (wch *WsConnectionsHandler)WsEndpoint(c *gin.Context) {
 		Conn: ws,
 	}
 
-	keys, ok := c.Request.URL.Query()["roomId"]
+	// todo parse roomType
+	roomType := c.Request.URL.Query().Get("roomType")
+	roomId := c.Request.URL.Query().Get("roomId")
 
-	if !ok || len(keys[0]) < 1 {
-		log.Println("Missing roomId")
-		return
-	}
-	roomName := keys[0]
-	fmt.Println(roomName)
+	fmt.Println(roomId)
 	fmt.Println("CONNECT")
 
-	if room, ok := wch.Rooms[roomName]; ok {
-		fmt.Println(room.Connections)
-		fmt.Println("ROOM NALEZEN")
-
-		room.Join(conn)
+	var room *Room
+	if roomType == "broadcast" {
+		if r, ok := wch.BroadcastRooms[roomId]; ok {
+			room = r
+		}
+	} else if roomType == "metering" {
+		if r, ok := wch.MeteringRooms[roomId]; ok {
+			fmt.Printf("room %s in %s", roomId, roomType)
+			room = r
+		}
 	} else {
-		fmt.Println("ROOM NENALEZEN")
-		wch.Rooms[roomName] = &Room{make([]WebSocketConnection, 0)}
-		wch.Rooms[roomName].Join(conn)
+		fmt.Println("unknown roomType")
+		return
+	}
+
+	if room != nil {
+		fmt.Printf("room %s in %s", roomId, roomType)
+		room.Join(conn)
+		fmt.Printf("socket connected to room %s in %s", roomId, roomType)
+
+	} else {
+		fmt.Printf("room not found, creating room %s in %s", roomId, roomType)
+		wch.BroadcastRooms[roomId] = &Room{make([]WebSocketConnection, 0)}
+		wch.BroadcastRooms[roomId].Join(conn)
+		fmt.Printf("socket connected to new room %s in %s", roomId, roomType)
 	}
 }
 
-func (r *Room)Broadcast(msg interface{}) {
+func (r *Room) Broadcast(msg interface{}) {
 	fmt.Println("BROADCAST TO POCKET")
 
 	for _, conn := range r.Connections {
@@ -92,11 +112,7 @@ func (r *Room)Broadcast(msg interface{}) {
 	}
 }
 
-func (r *Room)Join(conn WebSocketConnection) {
+func (r *Room) Join(conn WebSocketConnection) {
 	r.Connections = append(r.Connections, conn)
 	log.Println("Client connected to endpoint")
 }
-
-
-
-

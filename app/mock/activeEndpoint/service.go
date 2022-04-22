@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-
-
 /*
 ActiveEndpointService
 */
@@ -22,7 +20,7 @@ var activeEndpointHandler = ActiveEndpointHandler{
 	ActiveEndpoints: make(map[string]ActiveEndpoint),
 }
 
-func Register(r *RegisterActiveEndpointRequest) map[string]interface{}{
+func Register(r *RegisterActiveEndpointRequest) map[string]interface{} {
 	rp := reflection.ReflectAndDescribe(r.DataPattern)
 
 	activeEndpoint := r.toActiveEndpoint(rp)
@@ -36,17 +34,14 @@ func Register(r *RegisterActiveEndpointRequest) map[string]interface{}{
 	return ae
 }
 
-
 func GetRegistered() map[string]ActiveEndpoint {
 	return activeEndpointHandler.ActiveEndpoints
 }
-
 
 func AttachCmdListener(r *RegisterActiveEndpointRequest, bc *ActiveEndpointHandler) {
 
 	currentEndpoint := bc.ActiveEndpoints[r.EndpointName]
 	client := http.Client{}
-
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -63,7 +58,7 @@ func AttachCmdListener(r *RegisterActiveEndpointRequest, bc *ActiveEndpointHandl
 	var activeCommand = "Pause"
 	for {
 		select {
-		case cmd := <- currentEndpoint.OperationChannel:
+		case cmd := <-currentEndpoint.OperationChannel:
 			fmt.Println(cmd)
 			switch cmd {
 			case "Kill":
@@ -75,33 +70,32 @@ func AttachCmdListener(r *RegisterActiveEndpointRequest, bc *ActiveEndpointHandl
 				activeCommand = "Run"
 			}
 		case <-time.After(1 * time.Second):
-		if activeCommand == "Run" {
-			fmt.Println("will be run")
+			if activeCommand == "Run" {
+				fmt.Println("will be run")
 
-			start := time.Now()
+				start := time.Now()
 
-			res, _ := sendHttpRequest(r,client, true, currentEndpoint.ReflectionPattern)
+				res, _ := sendHttpRequest(r, client, true, currentEndpoint.ReflectionPattern)
 
-			end := time.Since(start)
+				end := time.Since(start)
 
-			metering := metering.ActiveEndpointMetering{
-				Status: res.Status,
-				Duration: int64(end / time.Millisecond),
-			}
-			fmt.Println("DURATION")
-			fmt.Println(end)
+				metering := metering.ActiveEndpointMetering{
+					Status:   res.Status,
+					Duration: int64(end / time.Millisecond),
+				}
+				fmt.Println("DURATION")
+				fmt.Println(end)
 
-			fmt.Println("send")
+				fmt.Println("send")
 
-			currentEndpoint.MeteringChannel <- survey.MergeNext(metering)
-			currentEndpoint.BroadcastChannel <- res.Status
+				currentEndpoint.MeteringChannel <- survey.MergeNext(metering)
+				currentEndpoint.BroadcastChannel <- res.Status
 			}
 		}
 	}
 
 	currentEndpoint.WaitGroup.Wait()
 }
-
 
 func AttachBroadcastListener(r *RegisterActiveEndpointRequest, bc *ActiveEndpointHandler) {
 	currentEndpoint := bc.ActiveEndpoints[r.EndpointName]
@@ -113,8 +107,8 @@ func AttachBroadcastListener(r *RegisterActiveEndpointRequest, bc *ActiveEndpoin
 	}()
 
 	for {
-		e := <- currentEndpoint.BroadcastChannel
-		room := socket.WsConnections.Rooms[currentEndpoint.Name]
+		e := <-currentEndpoint.BroadcastChannel
+		room := socket.WsConnections.BroadcastRooms[currentEndpoint.Name]
 		fmt.Println("NAME")
 		fmt.Println(room)
 
@@ -132,8 +126,8 @@ func AttachMeteringListener(r *RegisterActiveEndpointRequest, bc *ActiveEndpoint
 	}()
 
 	for {
-		e := <- currentEndpoint.MeteringChannel
-		room := socket.WsConnections.Rooms[currentEndpoint.Name]
+		e := <-currentEndpoint.MeteringChannel
+		room := socket.WsConnections.BroadcastRooms[currentEndpoint.Name]
 		fmt.Println(e)
 		fmt.Println(room)
 
@@ -141,20 +135,16 @@ func AttachMeteringListener(r *RegisterActiveEndpointRequest, bc *ActiveEndpoint
 	}
 }
 
-
-func RunCmd(r *RunActiveEndpointCommandRequest){
+func RunCmd(r *RunActiveEndpointCommandRequest) {
 	activeEndpoint := activeEndpointHandler.getEndpoint(r.EndpointName)
 	activeEndpoint.OperationChannel <- r.Command
 }
-
-
 
 /*
 ActiveEndpointService - helpers
 */
 
-
-func sendHttpRequest(r *RegisterActiveEndpointRequest, c http.Client, prx bool, rp map[string]interface{}) (*http.Response, error){
+func sendHttpRequest(r *RegisterActiveEndpointRequest, c http.Client, prx bool, rp map[string]interface{}) (*http.Response, error) {
 	fmt.Println("sendHttpRequest")
 	payloadBuf := new(bytes.Buffer)
 
@@ -167,7 +157,7 @@ func sendHttpRequest(r *RegisterActiveEndpointRequest, c http.Client, prx bool, 
 	if prx {
 		url = "http://localhost:8082/"
 		suffix = "eventLog"
-	}else {
+	} else {
 		url = r.EndpointName
 		suffix = "efefe"
 	}
@@ -175,7 +165,7 @@ func sendHttpRequest(r *RegisterActiveEndpointRequest, c http.Client, prx bool, 
 
 	fmt.Println(url + suffix)
 
-	req, err := http.NewRequest(http.MethodPost, url + suffix, payloadBuf)
+	req, err := http.NewRequest(http.MethodPost, url+suffix, payloadBuf)
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		fmt.Println(err)

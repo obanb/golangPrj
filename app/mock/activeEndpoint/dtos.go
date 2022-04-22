@@ -30,35 +30,32 @@ func (raer RegisterActiveEndpointRequest) toActiveEndpoint(rp map[string]interfa
 		Name:              raer.EndpointName,
 		ReflectionPattern: rp,
 		BroadcastChannel:  make(chan string),
-		MeteringChannel:  make(chan *metering.ActiveEndpointSurvey),
+		MeteringChannel:   make(chan *metering.ActiveEndpointSurvey),
 		OperationChannel:  make(chan string),
-		WaitGroup: new(sync.WaitGroup),
+		WaitGroup:         new(sync.WaitGroup),
 	}
 }
 
-
 type RunActiveEndpointCommandRequest struct {
-	EndpointName string                 `json:"endpointName"`
-	Command string `json:"command"`
+	EndpointName string `json:"endpointName"`
+	Command      string `json:"command"`
 }
 
 /*
 Impl
 */
 
-
 type ActiveEndpoint struct {
-	TargetURI         string                 `json:"targetURI"`
-	Name              string                 `json:"name"`
-	ReflectionPattern map[string]interface{} `json:"reflectionPattern"`
-	Options           ActiveEndpointOptions  `json:"activeEndpointOptions"`
-	BroadcastChannel  chan string `json:"-"`
-	OperationChannel  chan string `json:"-"`
-	MeteringChannel  chan *metering.ActiveEndpointSurvey `json:"-"`
-	WaitGroup *sync.WaitGroup `json:"-"`
-	Connections []socket.WebSocketConnection `json:"-"`
+	TargetURI         string                              `json:"targetURI"`
+	Name              string                              `json:"name"`
+	ReflectionPattern map[string]interface{}              `json:"reflectionPattern"`
+	Options           ActiveEndpointOptions               `json:"activeEndpointOptions"`
+	BroadcastChannel  chan string                         `json:"-"`
+	OperationChannel  chan string                         `json:"-"`
+	MeteringChannel   chan *metering.ActiveEndpointSurvey `json:"-"`
+	WaitGroup         *sync.WaitGroup                     `json:"-"`
+	Connections       []socket.WebSocketConnection        `json:"-"`
 }
-
 
 type ActiveEndpointHandler struct {
 	ActiveEndpoints map[string]ActiveEndpoint

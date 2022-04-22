@@ -33,8 +33,8 @@ type RegisterActiveEndpointRequest struct {
 }
 
 type RunActiveEndpointCommandRequest struct {
-	EndpointName string                 `json:"endpointName"`
-	Command string `json:"command"`
+	EndpointName string `json:"endpointName"`
+	Command      string `json:"command"`
 }
 
 type ActiveEndpointActionRequest struct {
@@ -45,7 +45,7 @@ type ActiveEndpointActionRequest struct {
 type ActiveEndpointActionResponse struct {
 	EndpointName string `json:"endpointName"`
 	Action       string `json:"action"`
-	Status string `json:"status"`
+	Status       string `json:"status"`
 }
 
 type RegisterEndpointResponse struct {
@@ -73,7 +73,7 @@ type ActiveEndpoint struct {
 	Options           ActiveEndpointOptions  `json:"activeEndpointOptions"`
 	BroadcastChannel  chan string
 	OperationChannel  chan string
-	WaitGroup *sync.WaitGroup
+	WaitGroup         *sync.WaitGroup
 }
 
 type EndpointPersistence struct {
@@ -113,7 +113,7 @@ func (raer RegisterActiveEndpointRequest) toActiveEndpoint(rp map[string]interfa
 		ReflectionPattern: rp,
 		BroadcastChannel:  make(chan string),
 		OperationChannel:  make(chan string),
-		WaitGroup: new(sync.WaitGroup),
+		WaitGroup:         new(sync.WaitGroup),
 	}
 }
 
@@ -157,16 +157,16 @@ func (h JsonDataHandlers) RegisterActiveEndpoint() func(*gin.Context) {
 }
 
 func (h JsonDataHandlers) HandleActiveEndpointAction(c *gin.Context) {
-		var request ActiveEndpointActionRequest
-		decoder := json.NewDecoder(c.Request.Body)
-		decoder.DisallowUnknownFields()
-		err := decoder.Decode(&request)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
-		} else {
-			UseActiveEndpointAction(request)
-			c.JSON(http.StatusCreated, "true")
-		}
+	var request ActiveEndpointActionRequest
+	decoder := json.NewDecoder(c.Request.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+	} else {
+		UseActiveEndpointAction(request)
+		c.JSON(http.StatusCreated, "true")
+	}
 }
 
 func UseActiveEndpointAction(r ActiveEndpointActionRequest) {
@@ -209,7 +209,6 @@ func (h JsonDataHandlers) ServeFromReflection(c *gin.Context) {
 	}
 }
 
-
 func routineFn(r *ActiveEndpointActionRequest, bc *ActiveEndpointHandler) {
 
 	//client := &http.Client{}
@@ -235,7 +234,7 @@ func routineFn(r *ActiveEndpointActionRequest, bc *ActiveEndpointHandler) {
 		fmt.Println(proc)
 
 		json.NewEncoder(payloadBuf).Encode(proc)
-		req, err := http.NewRequest("POST", ProxyURL + "/eventLog", payloadBuf)
+		req, err := http.NewRequest("POST", ProxyURL+"/eventLog", payloadBuf)
 
 		fmt.Println(ProxyURL + "/eventLog")
 		if err != nil {
@@ -263,7 +262,6 @@ func Register(r *ActiveEndpointActionRequest, bc *ActiveEndpointHandler) {
 	currentEndpoint := bc.ActiveEndpoints[r.EndpointName]
 	client := &http.Client{}
 
-
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Error", fmt.Sprintf("%v", r))
@@ -272,11 +270,10 @@ func Register(r *ActiveEndpointActionRequest, bc *ActiveEndpointHandler) {
 
 	defer currentEndpoint.WaitGroup.Done()
 
-
 	var activeCommand = "Pause"
 	for {
 		select {
-		case cmd := <- currentEndpoint.OperationChannel:
+		case cmd := <-currentEndpoint.OperationChannel:
 			fmt.Println(cmd)
 			switch cmd {
 			case "Kill":
@@ -290,7 +287,7 @@ func Register(r *ActiveEndpointActionRequest, bc *ActiveEndpointHandler) {
 			if activeCommand == "Run" {
 				for {
 					time.Sleep(time.Second * 2)
-					SendHttpRequest(r,client, true)
+					SendHttpRequest(r, client, true)
 				}
 			}
 		}
@@ -299,12 +296,12 @@ func Register(r *ActiveEndpointActionRequest, bc *ActiveEndpointHandler) {
 	currentEndpoint.WaitGroup.Wait()
 }
 
-func RunCmd(r *RunActiveEndpointCommandRequest, bc *ActiveEndpointHandler){
+func RunCmd(r *RunActiveEndpointCommandRequest, bc *ActiveEndpointHandler) {
 	activeEndpoint := bc.getHandler(r.EndpointName)
 	activeEndpoint.OperationChannel <- r.Command
 }
 
-func SendHttpRequest(r *ActiveEndpointActionRequest, c *http.Client, prx bool) (*http.Response, *error){
+func SendHttpRequest(r *ActiveEndpointActionRequest, c *http.Client, prx bool) (*http.Response, *error) {
 	payloadBuf := new(bytes.Buffer)
 	json.NewEncoder(payloadBuf).Encode("pes")
 
@@ -314,11 +311,11 @@ func SendHttpRequest(r *ActiveEndpointActionRequest, c *http.Client, prx bool) (
 	if prx {
 		url = ProxyURL
 		suffix = "eventLog"
-	}else {
+	} else {
 		url = r.EndpointName
 		suffix = "efefe"
 	}
-	req, _ := http.NewRequest("POST", url + suffix, payloadBuf)
+	req, _ := http.NewRequest("POST", url+suffix, payloadBuf)
 
 	resp, err := c.Do(req)
 	if err != nil {
@@ -327,7 +324,6 @@ func SendHttpRequest(r *ActiveEndpointActionRequest, c *http.Client, prx bool) (
 	}
 	return resp, nil
 }
-
 
 type JsonNumberRepresentative = float64
 type JsonStringRepresentative = string

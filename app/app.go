@@ -51,13 +51,12 @@ func Start() {
 	appServerHandler := initAppServerHandler()
 	appServerHandler.Use(CORSMiddleware())
 
-	
 	initProxyServerHandler := func() *gin.Engine {
 		h := gin.New()
 		h.Use(gin.Recovery())
 		return h
 	}
-	
+
 	proxyServerHandler := initProxyServerHandler()
 
 	appSvr := &http.Server{
@@ -77,16 +76,16 @@ func Start() {
 	proxyUrls := proxyServerHandler.Group("/")
 	proxyUrls.Use(gin.Logger())
 
-	RequestLoggerMiddleware := func () gin.HandlerFunc {
+	RequestLoggerMiddleware := func() gin.HandlerFunc {
 		return func(c *gin.Context) {
 			fmt.Println("middle")
-		var buf bytes.Buffer
-		tee := io.TeeReader(c.Request.Body, &buf)
-		body, _ := ioutil.ReadAll(tee)
-		c.Request.Body = ioutil.NopCloser(&buf)
-		log.Println(string(body))
-		c.Next()
-	}
+			var buf bytes.Buffer
+			tee := io.TeeReader(c.Request.Body, &buf)
+			body, _ := ioutil.ReadAll(tee)
+			c.Request.Body = ioutil.NopCloser(&buf)
+			log.Println(string(body))
+			c.Next()
+		}
 	}
 
 	proxyUrls.POST("/eventLog", RequestLoggerMiddleware())
@@ -145,7 +144,6 @@ func Start() {
 	appServerHandler.GET("/register", register)
 	appServerHandler.GET("/login", login)
 	//appServerHandler.GET("/ws", wsEndpoint)
-
 
 	appServerHandler.GET("/registerActiveEndpoint", registerActiveEndpoint)
 	//appServerHandler.POST("/registerActiveEndpoint", jsdh.RegisterActiveEndpoint())

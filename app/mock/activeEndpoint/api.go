@@ -16,7 +16,6 @@ func RegisterEndpointHandler() func(*gin.Context) {
 
 		err := decoder.Decode(&request)
 
-
 		res := Register(&request)
 
 		if err != nil {
@@ -43,7 +42,6 @@ func RunCmdhandler() func(*gin.Context) {
 		decoder.DisallowUnknownFields()
 
 		err := decoder.Decode(&request)
-
 
 		RunCmd(&request)
 

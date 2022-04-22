@@ -2,7 +2,6 @@ package reflection
 
 import "reflect"
 
-
 type PropertyKind int64
 
 const (
